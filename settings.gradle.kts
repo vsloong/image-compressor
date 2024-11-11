@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "image-compressor"
 include(":app")
- 
+include(":compressor")
