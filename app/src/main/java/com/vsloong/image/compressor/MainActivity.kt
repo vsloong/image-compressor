@@ -12,6 +12,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,10 +34,9 @@ import java.util.LinkedList
 
 class MainActivity : ComponentActivity() {
 
-    private val TAG = "图片压缩"
+    private val TAG = "image-compressor"
 
     private val queue: LinkedList<File> = LinkedList()
-
 
     private var inputBitmap = mutableStateOf<Bitmap?>(null)
     private var outputBitmap = mutableStateOf<Bitmap?>(null)
@@ -53,12 +54,13 @@ class MainActivity : ComponentActivity() {
 
         val outputDir = cacheDir.resolve("output")
 
-
-        cacheDir.listFiles()?.let { queue.addAll(it) }
+        // copy assets res to local
+        AssetsUtils.copyAssetsToCache(this)?.listFiles()?.filter { !it.isDirectory }
+            ?.let { queue.addAll(it) }
 
         val pickMedia =
             registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-                Log.e(TAG, "选择相册:$uri")
+                Log.e(TAG, "Pick Media: $uri")
                 mediaUri = uri
                 uri?.let {
 
@@ -77,7 +79,11 @@ class MainActivity : ComponentActivity() {
 
                     inputStream?.close()
 
-                    Compressor.run(uri = uri, context = this, quality = 50, outputDir = outputDir)
+                    Compressor.run(
+                        uri = uri, context = this, quality = 50, outputDir = outputDir,
+                        maxWidth = 500,
+                        maxHeight = 500,
+                    )
                         .onSuccess { output ->
                             outputBitmap.value = BitmapFactory.decodeFile(output.absolutePath)
 
@@ -87,7 +93,7 @@ class MainActivity : ComponentActivity() {
                                     "\nwidth*height=${info.width}x${info.height}" +
                                     "\nsize=${info.size / 1024} KB"
                         }.onFailure {
-                            Log.e(TAG, "压缩失败：${it.message}")
+                            Log.e(TAG, "error=${it.message}")
                         }
                 }
 
@@ -110,13 +116,11 @@ class MainActivity : ComponentActivity() {
                             currentFile = file
                             val info = ImageUtil.info(file)
                             if (info.width <= 0 || info.height <= 0) {
-                                inputFileInfo.value = "获取图片信息失败：${file.name}"
+                                inputFileInfo.value = "get image info error, file=${file.name}"
                                 return@ImageCompressScreen
                             }
 
                             inputBitmap.value = BitmapFactory.decodeFile(file.absolutePath)
-                            val input = inputBitmap.value ?: return@ImageCompressScreen
-
                             inputFileInfo.value = "name=${file.name}" +
                                     "\ntype=${info.type}" +
                                     "\nwidth*height=${info.width}x${info.height}" +
@@ -125,24 +129,22 @@ class MainActivity : ComponentActivity() {
                         onCompressClick = {
                             val input = currentFile ?: return@ImageCompressScreen
 
-                            Compressor.run(file = input, outputDir = outputDir, quality = 50)
-                                .onSuccess { output ->
-                                    outputBitmap.value =
-                                        BitmapFactory.decodeFile(output.absolutePath)
+                            Compressor.run(
+                                file = input, outputDir = outputDir, quality = 50,
+                                maxWidth = 500,
+                                maxHeight = 500,
+                            ).onSuccess { output ->
+                                outputBitmap.value =
+                                    BitmapFactory.decodeFile(output.absolutePath)
 
-                                    val info = ImageUtil.info(output)
-                                    outputFileInfo.value = "name=${output.name}" +
-                                            "\ntype=${info.type}" +
-                                            "\nwidth*height=${info.width}x${info.height}" +
-                                            "\nsize=${info.size / 1024} KB"
-                                }
-                                .onFailure {
-                                    Log.e(TAG, "压缩失败：${it.message}")
-                                }
-                        },
-                        onCopyClick = {
-                            AssetsUtils.copyAssetsToCache(this)
-                            cacheDir.listFiles()?.let { queue.addAll(it) }
+                                val info = ImageUtil.info(output)
+                                outputFileInfo.value = "name=${output.name}" +
+                                        "\ntype=${info.type}" +
+                                        "\nwidth*height=${info.width}x${info.height}" +
+                                        "\nsize=${info.size / 1024} KB"
+                            }.onFailure {
+                                Log.e(TAG, "error=${it.message}")
+                            }
                         },
                         onAlbumClick = {
                             pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -154,6 +156,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ImageCompressScreen(
     modifier: Modifier,
@@ -161,18 +164,15 @@ fun ImageCompressScreen(
     inputFileInfo: String,
     compressedBitmap: Bitmap?,
     outputFileInfo: String,
-    onCopyClick: () -> Unit = {},
     onNextClick: () -> Unit = {},
     onCompressClick: () -> Unit = {},
     onAlbumClick: () -> Unit = {},
 ) {
     Column(modifier = modifier) {
-
-        Row {
-            Button(onClick = { onCopyClick.invoke() }) { Text(text = "拷贝到本地") }
-            Button(onClick = { onNextClick.invoke() }) { Text(text = "下一张") }
-            Button(onClick = { onCompressClick.invoke() }) { Text(text = "开始压缩") }
-            Button(onClick = { onAlbumClick.invoke() }) { Text(text = "打开相册") }
+        FlowRow {
+            Button(onClick = { onNextClick.invoke() }) { Text(text = "Next") }
+            Button(onClick = { onCompressClick.invoke() }) { Text(text = "Compress") }
+            Button(onClick = { onAlbumClick.invoke() }) { Text(text = "Album") }
         }
 
         Row {

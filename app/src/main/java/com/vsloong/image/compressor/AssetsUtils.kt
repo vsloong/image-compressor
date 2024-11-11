@@ -12,25 +12,29 @@ import java.io.OutputStream
 object AssetsUtils {
     private const val TAG = "AssetCopyUtil"
 
-    fun copyAssetsToCache(context: Context) {
-        val assetManager = context.assets
-        val cacheDirectory = context.cacheDir
+    fun sampleCacheDir(context: Context) = File(context.cacheDir, "samples")
 
-        // 创建目标文件夹
+    fun copyAssetsToCache(context: Context) :File?{
+        val assetManager = context.assets
+        val cacheDirectory = sampleCacheDir(context)
+
         if (!cacheDirectory.exists()) {
             cacheDirectory.mkdirs()
         }
 
         try {
-            val files = assetManager.list("")
+            val files = assetManager.list("samples")
             files?.forEach { filename ->
+                Log.e(TAG, "copyAssetsToCache: filename=$filename")
                 val outFile = File(cacheDirectory, filename)
                 if (!outFile.exists()) {
                     copyFile(assetManager, filename, outFile)
                 }
             }
+            return cacheDirectory
         } catch (e: IOException) {
             Log.e(TAG, "Failed to copy assets to cache directory", e)
+            return null
         }
     }
 
