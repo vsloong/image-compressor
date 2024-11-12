@@ -14,7 +14,7 @@ object AssetsUtils {
 
     fun sampleCacheDir(context: Context) = File(context.cacheDir, "samples")
 
-    fun copyAssetsToCache(context: Context) :File?{
+    fun copyAssetsToCache(context: Context): File? {
         val assetManager = context.assets
         val cacheDirectory = sampleCacheDir(context)
 
@@ -22,13 +22,18 @@ object AssetsUtils {
             cacheDirectory.mkdirs()
         }
 
+        val assetDir = "samples"
         try {
-            val files = assetManager.list("samples")
+            val files = assetManager.list(assetDir)
             files?.forEach { filename ->
-                Log.e(TAG, "copyAssetsToCache: filename=$filename")
+                Log.e(TAG, "copyAssetsToCache: filename=$filename -> cacheDir=$cacheDirectory")
                 val outFile = File(cacheDirectory, filename)
                 if (!outFile.exists()) {
-                    copyFile(assetManager, filename, outFile)
+                    copyFile(
+                        assetManager = assetManager,
+                        filename = "${assetDir}${File.separator}${filename}",
+                        outFile = outFile
+                    )
                 }
             }
             return cacheDirectory
