@@ -59,10 +59,10 @@ class MainActivity : ComponentActivity() {
 
     private fun processUri(uri: Uri) {
         val info = ImageUtil.info(uri = uri, context = this)
-        inputFileInfo.value = "name=${uri}" +
-                "\ntype=${info.type}" +
-                "\nwidth*height=${info.width}x${info.height}" +
-                "\nsize=${info.size / 1024} KB"
+        inputFileInfo.value = "\ntype=${info.type}" +
+                "\nw*h=${info.width}*${info.height}" +
+                "\nsize=${info.size / 1024} KB" +
+                "\nname=${uri}"
 
         val inputStream = contentResolver.openInputStream(uri)
         inputStream?.let {
@@ -84,10 +84,10 @@ class MainActivity : ComponentActivity() {
             outputBitmap.value = BitmapFactory.decodeFile(output.absolutePath)
 
             val info = ImageUtil.info(output)
-            outputFileInfo.value = "name=${output.name}" +
-                    "\ntype=${info.type}" +
-                    "\nwidth*height=${info.width}x${info.height}" +
-                    "\nsize=${info.size / 1024} KB"
+            outputFileInfo.value = "\ntype=${info.type}" +
+                    "\nw*h=${info.width}*${info.height}" +
+                    "\nsize=${info.size / 1024} KB" +
+                    "\nname=${output.name}"
         }.onFailure {
             Log.e(TAG, "error=${it.message}")
         }
@@ -182,7 +182,7 @@ fun ImageCompressScreen(
                     Image(
                         bitmap = srcBitmap.asImageBitmap(),
                         contentDescription = null,
-                        contentScale = ContentScale.Fit,
+                        contentScale = ContentScale.FillWidth,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -199,7 +199,7 @@ fun ImageCompressScreen(
                     Image(
                         bitmap = compressedBitmap.asImageBitmap(),
                         contentDescription = null,
-                        contentScale = ContentScale.Fit,
+                        contentScale = ContentScale.FillWidth,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
