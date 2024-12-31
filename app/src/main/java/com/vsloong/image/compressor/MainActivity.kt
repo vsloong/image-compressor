@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
 
     private fun processUri(uri: Uri) {
         val info = ImageUtil.info(uri = uri, context = this)
-        inputFileInfo.value = "\ntype=${info.type}" +
+        inputFileInfo.value = "\ntype=${info.type.extension}" +
                 "\nw*h=${info.width}*${info.height}" +
                 "\nsize=${info.size / 1024} KB" +
                 "\nname=${uri}"
@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
             outputBitmap.value = BitmapFactory.decodeFile(output.absolutePath)
 
             val info = ImageUtil.info(output)
-            outputFileInfo.value = "\ntype=${info.type}" +
+            outputFileInfo.value = "\ntype=${info.type.extension}" +
                     "\nw*h=${info.width}*${info.height}" +
                     "\nsize=${info.size / 1024} KB" +
                     "\nname=${output.name}"

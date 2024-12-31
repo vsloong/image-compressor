@@ -19,7 +19,7 @@ internal class WeChatEngine(
         try {
             checkOutputDir(outputDir)
 
-            val info = ImageUtil.info(streamProvider.openInputStream())
+            val info = ImageUtil.info(streamProvider)
 
             val options = BitmapFactory.Options()
             options.inSampleSize = computeInSampleSize(
@@ -34,6 +34,7 @@ internal class WeChatEngine(
             return compressAndWriteToFile(
                 bitmap = tagBitmap,
                 type = info.type,
+                orientation = info.orientation,
                 quality = quality,
                 outputDir = outputDir
             )

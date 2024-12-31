@@ -1,6 +1,8 @@
 package com.vsloong.image.compressor.engine
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
+import com.vsloong.image.compressor.utils.ImageType
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -22,37 +24,36 @@ interface ICompressEngine {
         }
     }
 
-    /**
-     * get image format from BitmapFactory.Options.outMimeType
-     */
-    fun getFileFormat(string: String?): Bitmap.CompressFormat {
-        if (string == null) {
-            return Bitmap.CompressFormat.JPEG
-        }
-
-        return when (string) {
-            "image/png" -> Bitmap.CompressFormat.PNG
-            "image/webp" -> Bitmap.CompressFormat.WEBP
-            else -> Bitmap.CompressFormat.JPEG
-        }
-    }
 
     /**
      * compress bitmap and write to file
      */
     fun compressAndWriteToFile(
         bitmap: Bitmap,
-        type: String,
+        type: ImageType,
+        orientation: Int,
         quality: Int,
         outputDir: File
     ): Result<File> {
         return try {
-            ByteArrayOutputStream().use { stream ->
-                bitmap.compress(getFileFormat(type), quality, stream)
-                bitmap.recycle()
 
-                val extension = type.replace("image/", "")
-                val outputFile = File(outputDir, "${System.currentTimeMillis()}.$extension")
+            // if need rotate
+            val realBitmap = if (type is ImageType.JPEG && orientation != 0) {
+                val matrix = Matrix()
+                matrix.postRotate(orientation.toFloat())
+                val rotatedBitmap =
+                    Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                bitmap.recycle()
+                rotatedBitmap
+            } else {
+                bitmap
+            }
+
+            ByteArrayOutputStream().use { stream ->
+                realBitmap.compress(type.compressFormat, quality, stream)
+                realBitmap.recycle()
+
+                val outputFile = File(outputDir, "${System.currentTimeMillis()}.${type.extension}")
 
                 FileOutputStream(outputFile).use { fos ->
                     fos.write(stream.toByteArray())

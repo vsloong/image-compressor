@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapFactory.Options
 import android.graphics.Matrix
+import android.util.Log
 import com.vsloong.image.compressor.provider.IStreamProvider
 import com.vsloong.image.compressor.utils.ImageUtil
 import java.io.File
@@ -21,7 +22,7 @@ internal class TargetSizeEngine(
         try {
             checkOutputDir(outputDir)
 
-            val info = ImageUtil.info(streamProvider.openInputStream())
+            val info = ImageUtil.info(streamProvider)
 
             val widthScale = maxWidth * 1f / info.width
             val heightScale = maxHeight * 1f / info.height
@@ -29,6 +30,7 @@ internal class TargetSizeEngine(
             val tagBitmap =
                 BitmapFactory.decodeStream(streamProvider.openInputStream(), null, Options())
                     ?: return Result.failure(Throwable("decode stream error"))
+
 
             val realScale = min(widthScale, heightScale)
             val targetBitmap = if (realScale < 1f) {
@@ -44,6 +46,7 @@ internal class TargetSizeEngine(
             return compressAndWriteToFile(
                 bitmap = targetBitmap,
                 type = info.type,
+                orientation = info.orientation,
                 quality = quality,
                 outputDir = outputDir
             )
